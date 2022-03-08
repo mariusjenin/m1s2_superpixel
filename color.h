@@ -22,6 +22,8 @@ public:
     virtual void operator-=(Color* c) = 0;
 
     virtual void operator/=(int denom) = 0;
+
+    virtual ~Color() =default;
 protected:
     virtual void check_type() = 0;
 
@@ -44,10 +46,10 @@ protected:
     }
 
 public:
-    int get_v(){
+    int get_v() const{
         return v;
     }
-    Color1(int p_v) : v(p_v){};
+    explicit Color1(int p_v) : v(p_v){};
 
 
     float distance(Color* c) override{
@@ -81,9 +83,15 @@ public:
         check_type();
         v /= denom;
     }
+
+    ~Color1() override= default;
 };
 
 class Color3 : public Color {
+private:
+    int v1;
+    int v2;
+    int v3;
 public:
     static constexpr const float TRISTIMULUS_X = 94.8110;
     static constexpr const float TRISTIMULUS_Y = 100.;
@@ -91,13 +99,15 @@ public:
     Color3(int p_v1, int p_v2, int p_v3) : v1(p_v1), v2(p_v2), v3(p_v3){};
 
 
-    int get_v1(){
+    ~Color3() override= default;
+
+    int get_v1() const{
         return v1;
     }
-    int get_v2(){
+    int get_v2() const{
         return v2;
     }
-    int get_v3(){
+    int get_v3() const{
         return v3;
     }
 
@@ -182,10 +192,6 @@ public:
         v2 /= denom;
         v3 /= denom;
     }
-private:
-    int v1;
-    int v2;
-    int v3;
 
 protected:
 
