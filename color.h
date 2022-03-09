@@ -13,15 +13,13 @@ public:
     static const int COLOR_TYPE_COLOR3 = 1;
     virtual float distance(Color* c) = 0;
 
-    virtual Color* operator+(Color* c) = 0;
-
-    virtual Color* operator-(Color* c) = 0;
-
     virtual void operator+=(Color* c) = 0;
 
     virtual void operator-=(Color* c) = 0;
 
     virtual void operator/=(int denom) = 0;
+
+    virtual void operator*=(int fact) = 0;
 
     virtual ~Color() =default;
 protected:
@@ -33,7 +31,7 @@ protected:
 
 class Color1 : public Color {
 private:
-    int v;
+    int m_v;
 protected:
     int get_type() override {
         return COLOR_TYPE_COLOR1;
@@ -47,41 +45,34 @@ protected:
 
 public:
     int get_v() const{
-        return v;
+        return m_v;
     }
-    explicit Color1(int p_v) : v(p_v){};
+    explicit Color1(int p_v) : m_v(p_v){};
 
 
     float distance(Color* c) override{
         check_type();
-        return abs(v - ((Color1*)c)->get_v());
-    }
-
-    Color* operator+(Color* c) override {
-        check_type();
-        auto* col = new Color1(v + ((Color1*)c)->get_v());
-        return col;
-    }
-
-    Color* operator-(Color* c) override {
-        check_type();
-        auto* col = new Color1(v- ((Color1*)c)->get_v());
-        return col;
+        return (float)abs(m_v - ((Color1*)c)->get_v());
     }
 
     void operator+=(Color* c) override {
         check_type();
-        v += ((Color1*)c)->get_v();
+        m_v += ((Color1*)c)->get_v();
     }
 
     void operator-=(Color* c) override {
         check_type();
-        v -= ((Color1*)c)->get_v();
+        m_v -= ((Color1*)c)->get_v();
     }
 
     void operator/=(int denom) override {
         check_type();
-        v /= denom;
+        m_v /= denom;
+    }
+
+    void operator*=(int fact) override {
+        check_type();
+        m_v *= fact;
     }
 
     ~Color1() override= default;
@@ -89,110 +80,103 @@ public:
 
 class Color3 : public Color {
 private:
-    int v1;
-    int v2;
-    int v3;
+    int m_v1;
+    int m_v2;
+    int m_v3;
 public:
     static constexpr const float TRISTIMULUS_X = 94.8110;
     static constexpr const float TRISTIMULUS_Y = 100.;
     static constexpr const float TRISTIMULUS_Z = 107.304;
-    Color3(int p_v1, int p_v2, int p_v3) : v1(p_v1), v2(p_v2), v3(p_v3){};
+    Color3(int p_v1, int p_v2, int p_v3) : m_v1(p_v1), m_v2(p_v2), m_v3(p_v3){};
 
 
     ~Color3() override= default;
 
     int get_v1() const{
-        return v1;
+        return m_v1;
     }
     int get_v2() const{
-        return v2;
+        return m_v2;
     }
     int get_v3() const{
-        return v3;
+        return m_v3;
     }
 
     void rgb_to_xyz(){
-        v1 = 0.412453 * v1 + 0.357580 * v2 + 0.180423 * v3;
-        v2 = 0.212671 * v1 + 0.715160 * v2 + 0.072169 * v3;
-        v3 = 0.019334 * v1 + 0.119193 * v2 + 0.950227 * v3;
+        m_v1 = (int) round(0.412453 * m_v1 + 0.357580 * m_v2 + 0.180423 * m_v3);
+        m_v2 = (int) round(0.212671 * m_v1 + 0.715160 * m_v2 + 0.072169 * m_v3);
+        m_v3 = (int) round(0.019334 * m_v1 + 0.119193 * m_v2 + 0.950227 * m_v3);
     }
 
     void xyz_to_rgb(){
-        v1 = 3.240479 * v1 + -1.537150 * v2 + -0.498535 * v3;
-        v2 = -0.969256 * v1 + 1.875992 * v2 + 0.041556 * v3;
-        v3 =0.055648 * v1 + -0.204043 * v2 + 1.057311 * v3;
+        m_v1 = (int) round(3.240479 * m_v1 + -1.537150 * m_v2 + -0.498535 * m_v3);
+        m_v2 = (int) round(-0.969256 * m_v1 + 1.875992 * m_v2 + 0.041556 * m_v3);
+        m_v3 = (int) round(0.055648 * m_v1 + -0.204043 * m_v2 + 1.057311 * m_v3);
     }
 
-    static float rgb_to_cielab_aux(float t){
+    static float xyz_to_cielab_aux(float t){
         if(t > 0.008856){
-            return pow(t,1/3);
+            return (float) pow(t,1/3);
         } else {
-            return 7.787 * t + 0.13793103448;
+            return 7.787f * t + 0.13793103448f;
         }
     }
-    void rgb_to_cielab(){
-        rgb_to_xyz();
-        float x_xn= v1/TRISTIMULUS_X;
-        float y_yn= v2/TRISTIMULUS_Y;
-        float z_zn= v3/TRISTIMULUS_Z;
-        if(y_yn > 0.008856){
-            v1  = 116 * pow(y_yn,1/3) - 16;
-        } else {
-            v1  = 903.3 *y_yn;
-        }
-
-        v2 = 500 * ( rgb_to_cielab_aux(x_xn) - rgb_to_cielab_aux(y_yn) );
-        v3 = 200 * ( rgb_to_cielab_aux(y_yn) - rgb_to_cielab_aux(z_zn) );
+    void xyz_to_cielab(){
+        float x_xn= (float) m_v1 / TRISTIMULUS_X;
+        float y_yn= (float) m_v2 / TRISTIMULUS_Y;
+        float z_zn= (float) m_v3 / TRISTIMULUS_Z;
+        m_v1 = (int) round(116.f * round(xyz_to_cielab_aux(y_yn) - 16) );
+        m_v2 = (int) (500 * round(xyz_to_cielab_aux(x_xn) - xyz_to_cielab_aux(y_yn) ));
+        m_v3 = (int) (200 * round(xyz_to_cielab_aux(y_yn) - xyz_to_cielab_aux(z_zn) ));
     }
-
-    void cielab_to_rgb(){
-        float p = (v1 +16)/116;
-        v1 = TRISTIMULUS_X * pow(p + v2/500,3);
-        v2 = TRISTIMULUS_Y * pow(p ,3);
-        v3 = TRISTIMULUS_Z * pow(p - v3/200,3);
-        xyz_to_rgb();
+    static float cielab_to_xyz_aux(float t){
+        if(t > 0.206896){
+            return (float) pow(t,3);
+        } else {
+            return  0.128418f * (t - 0.137931f);
+        }
+    }
+    void cielab_to_xyz(){
+        float p = (float) (m_v1 + 16) / 116;
+        m_v1 = (int) round(TRISTIMULUS_X * cielab_to_xyz_aux(((float)m_v1+16)/116));
+        m_v2 = (int) round(TRISTIMULUS_Y * cielab_to_xyz_aux(((float)m_v1+16)/116 + (float)m_v2/500));
+        m_v3 = (int) round(TRISTIMULUS_Z * cielab_to_xyz_aux(((float)m_v1+16)/116 - (float)m_v3/200));
     }
 
     float distance(Color* c) override{
-        float v_1 = ((Color3*)c)->get_v1() - v1;
-        float v_2 = ((Color3*)c)->get_v2() - v2;
-        float v_3 = ((Color3*)c)->get_v3() - v3;
+        float v_1 = (float)((Color3*)c)->get_v1() - (float)m_v1;
+        float v_2 = (float)((Color3*)c)->get_v2() - (float)m_v2;
+        float v_3 = (float)((Color3*)c)->get_v3() - (float)m_v3;
         return sqrt(v_1*v_1 + v_2*v_2 + v_3*v_3);
-    }
-
-    Color* operator+(Color* c) override {
-        check_type();
-        auto* col = new  Color3(v1 + ((Color3*)c)->get_v1() , v2 + ((Color3*)c)->get_v2(), v3 + ((Color3*)c)->get_v3());
-        return col;
-    }
-
-    Color* operator-(Color* c) override {
-        check_type();
-        auto* col = new Color3(v1 - ((Color3*)c)->get_v1() , v2 - ((Color3*)c)->get_v2(), v3 - ((Color3*)c)->get_v3());
-        return col;
     }
 
     void operator+=(Color* c) override {
         check_type();
-        v1 += ((Color3*)c)->get_v1() ;
-        v2 += ((Color3*)c)->get_v2();
-        v3 += ((Color3*)c)->get_v3();
+        m_v1 += ((Color3*)c)->get_v1() ;
+        m_v2 += ((Color3*)c)->get_v2();
+        m_v3 += ((Color3*)c)->get_v3();
     }
 
     void operator-=(Color* c) override {
         check_type();
-        v1 -= ((Color3*)c)->get_v1() ;
-        v2 -= ((Color3*)c)->get_v2();
-        v3 -= ((Color3*)c)->get_v3();
+        m_v1 -= ((Color3*)c)->get_v1() ;
+        m_v2 -= ((Color3*)c)->get_v2();
+        m_v3 -= ((Color3*)c)->get_v3();
     }
 
     void operator/=(int denom) override {
         check_type();
-        v1 /= denom;
-        v2 /= denom;
-        v3 /= denom;
+        m_v1 /= denom;
+        m_v2 /= denom;
+        m_v3 /= denom;
     }
 
+    void operator*=(int fact) override {
+        check_type();
+        m_v1 *= fact;
+        m_v2 *= fact;
+        m_v3 *= fact;
+    }
 protected:
 
     int get_type() override {
