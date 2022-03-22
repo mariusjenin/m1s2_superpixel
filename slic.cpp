@@ -41,8 +41,8 @@ void slic(OCTET *img_in, OCTET *img_out, bool is_rgb, int w, int h, int shape, i
             if (is_rgb) {
                 int indice_image = 3 * (indice);
                 color = new Color3(img_in[indice_image], img_in[indice_image + 1], img_in[indice_image + 2]);
-                ((Color3*)color)->rgb_to_xyz(); //TODO revoir la conversion RGB<->CIELAB
-                ((Color3*)color)->xyz_to_cielab();
+//                ((Color3*)color)->rgb_to_xyz();
+//                ((Color3*)color)->xyz_to_cielab();
             } else {
                 color = new Color1(img_in[indice]);
             }
@@ -67,13 +67,23 @@ void slic(OCTET *img_in, OCTET *img_out, bool is_rgb, int w, int h, int shape, i
     auto side_sp_px = (float) sqrt(total_pixels / n_sp_px);
     int nb_centroid_w = (int) floor((float) w / side_sp_px);
     int nb_centroid_h = (int) floor((float) h / side_sp_px);
-    n_sp_px = nb_centroid_h * nb_centroid_w;
+    if(shape == SP_SQUARE_SHAPE){
+        n_sp_px = nb_centroid_h * nb_centroid_w;
+    } else if(shape == SP_HEXAGON_SHAPE){
+        n_sp_px = nb_centroid_h * nb_centroid_w + nb_centroid_h/2;
+    }
     std::vector<SuperPixel *> sp_pxs = {};
     sp_pxs.resize(n_sp_px);
-    side_sp_px = std::min((float) w / (float) nb_centroid_w, (float) h / (float) nb_centroid_h);
-    int side_sp_px_2 = (int) round((float) side_sp_px / 2.f);
+    side_sp_px = std::min((float)( w-1) / (float) nb_centroid_w, (float)( h-1) / (float) nb_centroid_h);
+    int side_sp_px_2 = (int) floor((float) side_sp_px / 2.f);
     for (int i = 0; i < nb_centroid_h; i++) {
-        for (int j = 0; j < nb_centroid_w; j++) {
+        int bound_w = 0;
+        if(shape == SP_SQUARE_SHAPE){
+            bound_w = nb_centroid_w;
+        } else if(shape == SP_HEXAGON_SHAPE){
+            bound_w = nb_centroid_w+(i%2==0?0:1);
+        }
+        for (int j = 0; j < bound_w; j++) {
             int y = 0;
             if(shape == SP_SQUARE_SHAPE){
                 y = (int) round((float) side_sp_px_2 + (float) j * side_sp_px);
@@ -82,23 +92,28 @@ void slic(OCTET *img_in, OCTET *img_out, bool is_rgb, int w, int h, int shape, i
             }
             int x = (int) round((float) side_sp_px_2 + (float) i * side_sp_px);
             int ind = x * w + y;
-            sp_pxs[i * nb_centroid_w + j] = new SuperPixel(pixels_img_in[ind]);
+            int ind_sp = 0;
+            if(shape == SP_SQUARE_SHAPE){
+                ind_sp =i * nb_centroid_w + j;
+            } else if(shape == SP_HEXAGON_SHAPE){
+                ind_sp =(int) ceil((float)i/2.f) * nb_centroid_w +(int)floor((float)i/2.f)* (nb_centroid_w+1) + j;
+            }
+            sp_pxs[ind_sp] = new SuperPixel(pixels_img_in[ind]);
         }
     }
-
 
     //Compute super-pixels
     int px_remaining = total_pixels - n_sp_px;
     int percent_done;
     int last_percent_done = 0;
-    std::string message_loading_before = "SLIC COMPUTATION : (";
+    std::string message_loading_before = "SLIC : (";
     std::string message_loading_after = ")";
     int char_space_loading = cols_terminal - (int) message_loading_before.size() - (int) message_loading_after.size();
     while (true) {
         percent_done = (int) round((float) (((float) total_pixels - (float) px_remaining) / (float) total_pixels) *
                                    (float) char_space_loading);
-        size_t size_sp_pxs = sp_pxs.size();
-        for (int i = 0; i < size_sp_pxs && px_remaining > 0; i++) {
+
+        for (int i = 0; i < n_sp_px && px_remaining > 0; i++) {
             bool found_and_added = sp_pxs.at(i)->find_neighbor_to_add(compactness, side_sp_px);
             if (found_and_added) px_remaining--;
         }
@@ -122,9 +137,8 @@ void slic(OCTET *img_in, OCTET *img_out, bool is_rgb, int w, int h, int shape, i
 
 
 //    Draw the image
-    size_t size_sp_pxs = sp_pxs.size();
     int count = 0;
-    for (int i = 0; i < size_sp_pxs; i++) {
+    for (int i = 0; i < n_sp_px; i++) {
         std::vector<Pixel *> cluster = sp_pxs.at(i)->get_cluster();
         size_t size_cluster = cluster.size();
         Coord coord = sp_pxs.at(i)->get_coord_start();
@@ -133,8 +147,8 @@ void slic(OCTET *img_in, OCTET *img_out, bool is_rgb, int w, int h, int shape, i
         if(is_rgb){
             indice = 3*(coord.get_x() * w + coord.get_y());
             color =(Color3 *) (sp_pxs.at(i)->get_color());
-            ((Color3*)color)->cielab_to_xyz();
-            ((Color3*)color)->xyz_to_rgb(); //TODO revoir la conversion RGB<->CIELAB
+//            ((Color3*)color)->cielab_to_xyz();
+//            ((Color3*)color)->xyz_to_rgb();
             img_out[indice] = ((Color3 *)color)->get_v1();
             img_out[indice+1] = ((Color3 *)color)->get_v2();
             img_out[indice+2] = ((Color3 *)color)->get_v3();
@@ -163,10 +177,8 @@ void slic(OCTET *img_in, OCTET *img_out, bool is_rgb, int w, int h, int shape, i
             delete pixels_img_in[i * w + j];
         }
     }
-    for (int i = 0; i < nb_centroid_h; i++) {
-        for (int j = 0; j < nb_centroid_w; j++) {
-            delete sp_pxs[i * nb_centroid_w + j];
-        }
+    for (int i = 0; i < n_sp_px; i++) {
+            delete sp_pxs[i];
     }
 }
 
@@ -188,14 +200,16 @@ int main(int argc, char const *argv[]) {
     std::string name_img_written_str = name_img_written;
     std::string type_img_read = name_img_read_str.substr(name_img_read_str.length() - 3);
     std::string type_img_written = name_img_written_str.substr(name_img_written_str.length() - 3);
-    std::cout << type_img_read << " " << type_img_written << std::endl;
+    //Check if same extension
     if (type_img_read != type_img_written) {
-        throw std::runtime_error(
-                "The images are not of the same type: '" + type_img_read + "' and '" + type_img_written + "'");
+        printf("%s", ("The images are not of the same type: '" + type_img_read + "' and '" + type_img_written + "'\n").c_str());
+        return 1;
     }
 
+    //Check if pgm or ppm
     if (type_img_read != "pgm" && type_img_read != "ppm") {
-        throw std::runtime_error("The images are not of a supported type : must be PGM or PPM");
+        printf("%s", "The images are not of a supported type : must be PGM or PPM\n");
+        return 1;
     }
     is_rgb = type_img_read == "ppm";
 
@@ -206,17 +220,22 @@ int main(int argc, char const *argv[]) {
     if(is_rgb){
         get_line_col_ppm(name_img_read, &h, &w);
         nb_px = h * w;
-        alloc_array(img_in, OCTET, nb_px*3);
+        alloc_array(img_in, OCTET, nb_px*3)
         read_ppm(name_img_read, img_in, nb_px);
-        alloc_array(img_out, OCTET, nb_px*3);
+        alloc_array(img_out, OCTET, nb_px*3)
     } else {
         get_line_col_pgm(name_img_read, &h, &w);
         nb_px = h * w;
-        alloc_array(img_in, OCTET, nb_px);
+        alloc_array(img_in, OCTET, nb_px)
         read_pgm(name_img_read, img_in, nb_px);
-        alloc_array(img_out, OCTET, nb_px);
+        alloc_array(img_out, OCTET, nb_px)
     }
 
+    //Check the number of superpixel
+    if (n_sp_px>nb_px && n_sp_px<1) {
+        printf("%s", "Number of superpixels can't be over the number of pixels or less than 1\n");
+        return 1;
+    }
     slic(img_in, img_out, is_rgb, w, h, shape, n_sp_px, compactness);
     if(is_rgb){
         write_ppm(name_img_written, img_out, h, w);
@@ -225,7 +244,7 @@ int main(int argc, char const *argv[]) {
     }
 
 
-    std::cout << "SLIC Done on "+name_img_read_str+" with "<<n_sp_px<<" super-pixels and a compactness of "<< compactness<< std::endl;
+    std::cout << "SLIC Done on "+name_img_read_str+" with \n"<<nb_px<<" pixels\n"<<n_sp_px<<" super-pixels\n"<<compactness<< " of compactness" <<std::endl;
 
     free(img_in);
     free(img_out);

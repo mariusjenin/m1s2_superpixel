@@ -125,7 +125,11 @@ public:
         px->set_flag(true);
         m_centroid = px->get_coord();
         m_cluster = {px};
-        m_neighbor = px->get_neighbor();
+        std::vector<Pixel*> neighbor = px->get_neighbor();
+        int size_neighbor = (int)neighbor.size();
+        for(int i = 0 ; i < size_neighbor ; i++){
+            m_neighbor.push_back(neighbor.at(i));
+        }
         m_color = px->get_color();
     }
 

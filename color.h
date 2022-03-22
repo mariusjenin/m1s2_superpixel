@@ -11,12 +11,15 @@
 #include <iostream>
 #include <iomanip>
 
+
+void clamp_values(int &val, int inf_tsh, int sup_tsh){
+    val = std::min(std::max(val,inf_tsh),sup_tsh);
+};
+
 class Color {
 public:
     static const int COLOR_TYPE_COLOR1 = 0;
     static const int COLOR_TYPE_COLOR3 = 1;
-
-    virtual void clamp_values() = 0;
 
     virtual float distance(Color* c) = 0;
 
@@ -52,9 +55,6 @@ protected:
 
 public:
 
-    void clamp_values() override{
-        m_v = std::min(std::max(m_v,0),255);
-    };
 
     int get_v() const{
         return m_v;
@@ -114,12 +114,6 @@ public:
         return m_v3;
     }
 
-    void clamp_values() override{
-        m_v1 = std::min(std::max(m_v1,0),255);
-        m_v2 = std::min(std::max(m_v2,0),255);
-        m_v3 = std::min(std::max(m_v3,0),255);
-    };
-
     void rgb_to_xyz(){
         float v1 = ( (float)m_v1 / 255.f );
         float v2 = ((float) m_v2 / 255.f );
@@ -149,7 +143,9 @@ public:
         m_v1 = (int)round(v1 * 0.4124 + v2 * 0.3576 + v3 * 0.1805);
         m_v2 = (int)round(v1 * 0.2126 + v2 * 0.7152 + v3 * 0.0722);
         m_v3 = (int)round(v1 * 0.0193 + v2 * 0.1192 + v3 * 0.9505);
-        clamp_values();
+        clamp_values(m_v1,0,255);
+        clamp_values(m_v2,0,255);
+        clamp_values(m_v3,0,255);
     }
 
     void xyz_to_rgb(){
@@ -184,8 +180,9 @@ public:
         m_v1 = (int) round(var_R * 255);
         m_v2 = (int) round(var_G * 255);
         m_v3 = (int) round(var_B * 255);
-
-        clamp_values();
+        clamp_values(m_v1,0,255);
+        clamp_values(m_v2,0,255);
+        clamp_values(m_v3,0,255);
     }
 
     void xyz_to_cielab(){
@@ -215,7 +212,9 @@ public:
         m_v1 = (int) round(( 116 * var_Y ) - 16);
         m_v2 = (int) round(500 * ( var_X - var_Y ));
         m_v3 = (int) round(200 * ( var_Y - var_Z ));
-        clamp_values();
+        clamp_values(m_v1,0,100);
+        clamp_values(m_v2,-128,128);
+        clamp_values(m_v3,-128,128);
     }
 
     void cielab_to_xyz(){
@@ -245,7 +244,9 @@ public:
         m_v1 = (int) round(var_X * TRISTIMULUS_X);
         m_v2 = (int) round(var_Y * TRISTIMULUS_Y);
         m_v3 = (int) round(var_Z * TRISTIMULUS_Z);
-        clamp_values();
+        clamp_values(m_v1,0,255);
+        clamp_values(m_v2,0,255);
+        clamp_values(m_v3,0,255);
     }
 
     float distance(Color* c) override{
