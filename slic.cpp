@@ -13,7 +13,10 @@
 
 #include "image.h"
 
-void slic(OCTET *img_in, OCTET *img_out, bool is_rgb, int w, int h, int n_sp_px, int compactness) {
+#define SP_SQUARE_SHAPE 0
+#define SP_HEXAGON_SHAPE 1
+
+void slic(OCTET *img_in, OCTET *img_out, bool is_rgb, int w, int h, int shape, int n_sp_px, int compactness) {
     int cols_terminal;
 #ifdef TIOCGSIZE
     struct ttysize ts;
@@ -38,8 +41,8 @@ void slic(OCTET *img_in, OCTET *img_out, bool is_rgb, int w, int h, int n_sp_px,
             if (is_rgb) {
                 int indice_image = 3 * (indice);
                 color = new Color3(img_in[indice_image], img_in[indice_image + 1], img_in[indice_image + 2]);
-//                ((Color3*)color)->rgb_to_xyz(); //TODO revoir la conversion RGB<->CIELAB
-//                ((Color3*)color)->xyz_to_cielab();
+                ((Color3*)color)->rgb_to_xyz(); //TODO revoir la conversion RGB<->CIELAB
+                ((Color3*)color)->xyz_to_cielab();
             } else {
                 color = new Color1(img_in[indice]);
             }
@@ -68,12 +71,17 @@ void slic(OCTET *img_in, OCTET *img_out, bool is_rgb, int w, int h, int n_sp_px,
     std::vector<SuperPixel *> sp_pxs = {};
     sp_pxs.resize(n_sp_px);
     side_sp_px = std::min((float) w / (float) nb_centroid_w, (float) h / (float) nb_centroid_h);
-    int side_sp_px_2 = (int) floor((float) side_sp_px / 2.f);
+    int side_sp_px_2 = (int) round((float) side_sp_px / 2.f);
     for (int i = 0; i < nb_centroid_h; i++) {
         for (int j = 0; j < nb_centroid_w; j++) {
+            int y = 0;
+            if(shape == SP_SQUARE_SHAPE){
+                y = (int) round((float) side_sp_px_2 + (float) j * side_sp_px);
+            } else if(shape == SP_HEXAGON_SHAPE){
+                y = (int) round((i%2==0?(float) side_sp_px_2:0)+ (float) j * side_sp_px);
+            }
             int x = (int) round((float) side_sp_px_2 + (float) i * side_sp_px);
-            int y = (int) round((float) side_sp_px_2 + (float) j * side_sp_px);
-            int ind = x * h + y;
+            int ind = x * w + y;
             sp_pxs[i * nb_centroid_w + j] = new SuperPixel(pixels_img_in[ind]);
         }
     }
@@ -125,8 +133,8 @@ void slic(OCTET *img_in, OCTET *img_out, bool is_rgb, int w, int h, int n_sp_px,
         if(is_rgb){
             indice = 3*(coord.get_x() * w + coord.get_y());
             color =(Color3 *) (sp_pxs.at(i)->get_color());
-//            ((Color3*)color)->cielab_to_xyz();
-//            ((Color3*)color)->xyz_to_rgb(); //TODO revoir la conversion RGB<->CIELAB
+            ((Color3*)color)->cielab_to_xyz();
+            ((Color3*)color)->xyz_to_rgb(); //TODO revoir la conversion RGB<->CIELAB
             img_out[indice] = ((Color3 *)color)->get_v1();
             img_out[indice+1] = ((Color3 *)color)->get_v2();
             img_out[indice+2] = ((Color3 *)color)->get_v3();
@@ -164,20 +172,17 @@ void slic(OCTET *img_in, OCTET *img_out, bool is_rgb, int w, int h, int n_sp_px,
 
 int main(int argc, char const *argv[]) {
     char name_img_read[250], name_img_written[250];
-    int n_sp_px, compactness;
+    int shape, n_sp_px, compactness;
     bool is_rgb;
-    if (argc > 5 || argc < 4) {
-        printf("Usage: img_in.<pgm/ppm> img_out.<pgm/ppm> nb_super_pixel compactness\n");
+    if (argc != 6) {
+        printf("Usage: img_in.<pgm/ppm> img_out.<pgm/ppm> shape nb_super_pixel compactness\n");
         return 1;
     }
     sscanf(argv[1], "%s", name_img_read);
     sscanf(argv[2], "%s", name_img_written);
-    sscanf(argv[3], "%d", &n_sp_px);
-    if (argc == 5) {
-        sscanf(argv[4], "%d", &compactness);
-    } else {
-        compactness = 20;
-    }
+    sscanf(argv[3], "%d", &shape);
+    sscanf(argv[4], "%d", &n_sp_px);
+    sscanf(argv[5], "%d", &compactness);
 
     std::string name_img_read_str = name_img_read;
     std::string name_img_written_str = name_img_written;
@@ -212,7 +217,7 @@ int main(int argc, char const *argv[]) {
         alloc_array(img_out, OCTET, nb_px);
     }
 
-    slic(img_in, img_out, is_rgb, w, h, n_sp_px, compactness);
+    slic(img_in, img_out, is_rgb, w, h, shape, n_sp_px, compactness);
     if(is_rgb){
         write_ppm(name_img_written, img_out, h, w);
     } else {
