@@ -1,16 +1,13 @@
 #include <stdio.h>
 #include <iostream>
-#include <fstream>
 #include <string>
 #include <vector>
-#include <algorithm>
-#include <stdlib.h>
-#include <math.h>
+#include <cstdlib>
+#include <cmath>
 #include "color.h"
 #include "pixel.h"
 #include <sys/ioctl.h>
 #include <unistd.h>
-
 #include "image.h"
 
 #define SP_SQUARE_SHAPE 0

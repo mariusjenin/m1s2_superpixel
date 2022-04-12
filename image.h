@@ -7,10 +7,10 @@
 #ifndef IMAGE_PPM
 #define IMAGE_PPM
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <cmath>
 
 #define alloc_array(nom, type, nombre) \
 if( (nom = (type*) calloc (nombre, sizeof(type) ) ) == NULL ) \
@@ -194,14 +194,14 @@ void read_pgm(char  nom_image[], OCTET *pt_image, int taille_image)
       }
 }
 
-float psnr(OCTET *img_in, OCTET *img_out, int w, int h) {
+float psnr(const OCTET *img_in, const OCTET *img_out, int size) {
     float eqm = 0;
 
-    for (int i = 0; i < w * h; i++) {
-        eqm += (img_in[i] - img_out[i]) * (img_in[i] - img_out[i]);
+    for (int i = 0; i < size; i++) {
+        eqm += ((float)img_in[i] - (float)img_out[i]) * ((float)img_in[i] - (float)img_out[i]);
     }
 
-    eqm /= w * h;
+    eqm /= (float)size;
 
     return 10 * log10(255 * 255 / eqm);
 }
