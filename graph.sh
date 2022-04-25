@@ -3,13 +3,13 @@
 source values_bash.sh
 
 # IN GNUPLOT
-#set xlabel "Compactness rate"
-#set ylabel "Number of superpixels"
-#set zlabel "Compression rate\nor\nPSNR"
-#set dgrid3d 50,50
-#set ticslevel 0
-#set grid x y z vertical lw 1
-#sp 'graph/chameleon/pgm_0.dat' u 1:2:4 w l t "Compression rate", 'graph/chameleon/pgm_0.dat' u 1:2:3 w l t "PSNR"
+set xlabel
+set ylabel
+set zlabel
+set dgrid3d 50,50
+set ticslevel 0
+set grid x y z vertical lw 1
+sp 'graph/chameleon/pgm_0.dat' u 1:2:4 w l t "Compression rate", 'graph/chameleon/pgm_0.dat' u 1:2:3 w l t "PSNR"
 
 g++ psnr.cpp -o psnr
 

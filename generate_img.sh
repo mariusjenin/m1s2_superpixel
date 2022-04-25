@@ -9,29 +9,29 @@ cd build;
 make -j;
 
 
-#FACILE
-for m in "${n_mode[@]}"
-do
-  for i in "${n_sp_chameleon[@]}"
-  do
-    for j in "${n_compactness[@]}"
-    do
-      ./m1s2_superpixel "../img/Facile.ppm" "../img_result/facile/ppm/${m}_${i}_${j}.ppm" $m $i $j;
-    done
-  done
-done
+##FACILE
+#for m in "${n_mode[@]}"
+#do
+#  for i in "${n_sp_facile[@]}"
+#  do
+#    for j in "${n_compactness_facile_difficile[@]}"
+#    do
+#      ./m1s2_superpixel "../img/Facile.ppm" "../img_result/facile/${m}_${i}_${j}.ppm" $m $i $j;
+#    done
+#  done
+#done
 
-#DIFFICILE
-for m in "${n_mode[@]}"
-do
-  for i in "${n_sp_chameleon[@]}"
-  do
-    for j in "${n_compactness[@]}"
-    do
-      ./m1s2_superpixel "../img/Difficile.ppm" "../img_result/difficile/ppm/${m}_${i}_${j}.ppm" $m $i $j;
-    done
-  done
-done
+##DIFFICILE
+#for m in "${n_mode[@]}"
+#do
+#  for i in "${n_sp_difficile[@]}"
+#  do
+#    for j in "${n_compactness_facile_difficile[@]}"
+#    do
+#      ./m1s2_superpixel "../img/Difficile.ppm" "../img_result/difficile/${m}_${i}_${j}.ppm" $m $i $j;
+#    done
+#  done
+#done
 
 # #CHAMELEON
 # for m in "${n_mode[@]}"
